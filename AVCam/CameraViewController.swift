@@ -9,14 +9,13 @@ import UIKit
 import AVFoundation
 import Photos
 
-class CameraViewController: UIViewController, AVCaptureFileOutputRecordingDelegate {
+class CameraViewController: UIViewController {
 	// MARK: View Controller Life Cycle
 	
     override func viewDidLoad() {
 		super.viewDidLoad()
 		
 		// Disable UI. The UI is enabled if and only if the session starts running.
-		recordButton.isEnabled = false
 		photoButton.isEnabled = false
 		captureModeControl.isEnabled = false
 		
@@ -126,14 +125,6 @@ class CameraViewController: UIViewController, AVCaptureFileOutputRecordingDelega
 		}
 		
 		super.viewWillDisappear(animated)
-	}
-	
-    override var shouldAutorotate: Bool {
-		// Disable autorotation of the interface when recording is in progress.
-		if let movieFileOutput = movieFileOutput {
-			return !movieFileOutput.isRecording
-		}
-		return true
 	}
 	
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
@@ -276,36 +267,8 @@ class CameraViewController: UIViewController, AVCaptureFileOutputRecordingDelega
 		session.commitConfiguration()
 	}
 	
-	@IBAction private func resumeInterruptedSession(_ resumeButton: UIButton) {
-		sessionQueue.async {
-			/*
-				The session might fail to start running, e.g., if a phone or FaceTime call is still
-				using audio or video. A failure to start the session running will be communicated via
-				a session runtime error notification. To avoid repeatedly failing to start the session
-				running, we only try to restart the session running in the session runtime error handler
-				if we aren't trying to resume the session running.
-			*/
-			self.session.startRunning()
-			self.isSessionRunning = self.session.isRunning
-			if !self.session.isRunning {
-				DispatchQueue.main.async {
-					let message = NSLocalizedString("Unable to resume", comment: "Alert message when unable to resume the session running")
-					let alertController = UIAlertController(title: "AVCam", message: message, preferredStyle: .alert)
-					let cancelAction = UIAlertAction(title: NSLocalizedString("OK", comment: "Alert OK button"), style: .cancel, handler: nil)
-					alertController.addAction(cancelAction)
-					self.present(alertController, animated: true, completion: nil)
-				}
-			} else {
-				DispatchQueue.main.async {
-					self.resumeButton.isHidden = true
-				}
-			}
-		}
-	}
-	
 	private enum CaptureMode: Int {
 		case photo = 0
-		case movie = 1
 	}
 
 	@IBOutlet private weak var captureModeControl: UISegmentedControl!
@@ -314,7 +277,6 @@ class CameraViewController: UIViewController, AVCaptureFileOutputRecordingDelega
 		captureModeControl.isEnabled = false
 		
 		if captureModeControl.selectedSegmentIndex == CaptureMode.photo.rawValue {
-			recordButton.isEnabled = false
 			
 			sessionQueue.async {
 				/*
@@ -323,43 +285,13 @@ class CameraViewController: UIViewController, AVCaptureFileOutputRecordingDelega
 					capture is not supported when an AVCaptureMovieFileOutput is connected to the session.
 				*/
 				self.session.beginConfiguration()
-                self.session.removeOutput(self.movieFileOutput!)
                 self.session.sessionPreset = .photo
 				
 				DispatchQueue.main.async {
 					captureModeControl.isEnabled = true
 				}
-				
-				self.movieFileOutput = nil
 								
 				self.session.commitConfiguration()
-			}
-		} else if captureModeControl.selectedSegmentIndex == CaptureMode.movie.rawValue {
-			
-			sessionQueue.async {
- 				let movieFileOutput = AVCaptureMovieFileOutput()
-				
-				if self.session.canAddOutput(movieFileOutput) {
-					self.session.beginConfiguration()
-					self.session.addOutput(movieFileOutput)
-                    self.session.sessionPreset = .high
-                    if let connection = movieFileOutput.connection(with: .video) {
-						if connection.isVideoStabilizationSupported {
-							connection.preferredVideoStabilizationMode = .auto
-						}
-					}
-					self.session.commitConfiguration()
-					
-					DispatchQueue.main.async {
-						captureModeControl.isEnabled = true
-					}
-					
-					self.movieFileOutput = movieFileOutput
-					
-					DispatchQueue.main.async {
-						self.recordButton.isEnabled = true
-					}
-				}
 			}
 		}
 	}
@@ -460,150 +392,6 @@ class CameraViewController: UIViewController, AVCaptureFileOutputRecordingDelega
 		}
 	}
 	
-	// MARK: Recording Movies
-	
-	private var movieFileOutput: AVCaptureMovieFileOutput?
-	
-	private var backgroundRecordingID: UIBackgroundTaskIdentifier?
-	
-	@IBOutlet private weak var recordButton: UIButton!
-	
-	@IBOutlet private weak var resumeButton: UIButton!
-	
-	@IBAction private func toggleMovieRecording(_ recordButton: UIButton) {
-		guard let movieFileOutput = self.movieFileOutput else {
-			return
-		}
-		
-		/*
-			Disable the Camera button until recording finishes, and disable
-			the Record button until recording starts or finishes.
-		
-			See the AVCaptureFileOutputRecordingDelegate methods.
-		*/
-		recordButton.isEnabled = false
-		captureModeControl.isEnabled = false
-		
-		/*
-			Retrieve the video preview layer's video orientation on the main queue
-			before entering the session queue. We do this to ensure UI elements are
-			accessed on the main thread and session configuration is done on the session queue.
-		*/
-        let videoPreviewLayerOrientation = previewView.videoPreviewLayer.connection?.videoOrientation
-		
-		sessionQueue.async {
-			if !movieFileOutput.isRecording {
-				if UIDevice.current.isMultitaskingSupported {
-					/*
-						Setup background task.
-						This is needed because the `capture(_:, didFinishRecordingToOutputFileAt:, fromConnections:, error:)`
-						callback is not received until AVCam returns to the foreground unless you request background execution time.
-						This also ensures that there will be time to write the file to the photo library when AVCam is backgrounded.
-						To conclude this background execution, endBackgroundTask(_:) is called in
-						`capture(_:, didFinishRecordingToOutputFileAt:, fromConnections:, error:)` after the recorded file has been saved.
-					*/
-					self.backgroundRecordingID = UIApplication.shared.beginBackgroundTask(expirationHandler: nil)
-				}
-				
-				// Update the orientation on the movie file output video connection before starting recording.
-                let movieFileOutputConnection = movieFileOutput.connection(with: .video)
-                movieFileOutputConnection?.videoOrientation = videoPreviewLayerOrientation!
-                
-                let availableVideoCodecTypes = movieFileOutput.availableVideoCodecTypes
-                
-                if availableVideoCodecTypes.contains(.hevc) {
-                    movieFileOutput.setOutputSettings([AVVideoCodecKey: AVVideoCodecType.hevc], for: movieFileOutputConnection!)
-                }
-                
-				// Start recording to a temporary file.
-				let outputFileName = NSUUID().uuidString
-				let outputFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent((outputFileName as NSString).appendingPathExtension("mov")!)
-                movieFileOutput.startRecording(to: URL(fileURLWithPath: outputFilePath), recordingDelegate: self)
-			} else {
-				movieFileOutput.stopRecording()
-			}
-		}
-	}
-	
-	func fileOutput(_ output: AVCaptureFileOutput, didStartRecordingTo fileURL: URL, from connections: [AVCaptureConnection]) {
-		// Enable the Record button to let the user stop the recording.
-		DispatchQueue.main.async {
-			self.recordButton.isEnabled = true
-			self.recordButton.setTitle(NSLocalizedString("Stop", comment: "Recording button stop title"), for: [])
-		}
-	}
-    
-    func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
-		/*
-			Note that currentBackgroundRecordingID is used to end the background task
-			associated with this recording. This allows a new recording to be started,
-			associated with a new UIBackgroundTaskIdentifier, once the movie file output's
-			`isRecording` property is back to false — which happens sometime after this method
-			returns.
-		
-			Note: Since we use a unique file path for each recording, a new recording will
-			not overwrite a recording currently being saved.
-		*/
-		func cleanUp() {
-			let path = outputFileURL.path
-            if FileManager.default.fileExists(atPath: path) {
-                do {
-                    try FileManager.default.removeItem(atPath: path)
-                } catch {
-                    print("Could not remove file at url: \(outputFileURL)")
-                }
-            }
-			
-			if let currentBackgroundRecordingID = backgroundRecordingID {
-				backgroundRecordingID = UIBackgroundTaskInvalid
-				
-				if currentBackgroundRecordingID != UIBackgroundTaskInvalid {
-					UIApplication.shared.endBackgroundTask(currentBackgroundRecordingID)
-				}
-			}
-		}
-		
-		var success = true
-		
-		if error != nil {
-            print("Movie file finishing error: \(String(describing: error))")
-            success = (((error! as NSError).userInfo[AVErrorRecordingSuccessfullyFinishedKey] as AnyObject).boolValue)!
-		}
-		
-		if success {
-			// Check authorization status.
-			PHPhotoLibrary.requestAuthorization { status in
-				if status == .authorized {
-					// Save the movie file to the photo library and cleanup.
-					PHPhotoLibrary.shared().performChanges({
-							let options = PHAssetResourceCreationOptions()
-							options.shouldMoveFile = true
-							let creationRequest = PHAssetCreationRequest.forAsset()
-							creationRequest.addResource(with: .video, fileURL: outputFileURL, options: options)
-						}, completionHandler: { success, error in
-							if !success {
-								print("Could not save movie to photo library: \(String(describing: error))")
-							}
-							cleanUp()
-						}
-					)
-				} else {
-					cleanUp()
-				}
-			}
-		} else {
-			cleanUp()
-		}
-		
-		// Enable the Camera and Record buttons to let the user switch camera and start another recording.
-		DispatchQueue.main.async {
-			// Only enable the ability to change camera if the device has more than one camera.
-			self.recordButton.isEnabled = true
-			self.captureModeControl.isEnabled = true
-			self.recordButton.setTitle(NSLocalizedString("Record", comment: "Recording button record title"), for: [])
-		}
-	}
-	
 	// MARK: KVO and Notifications
 	
 	private var keyValueObservations = [NSKeyValueObservation]()
@@ -614,7 +402,6 @@ class CameraViewController: UIViewController, AVCaptureFileOutputRecordingDelega
 			
 			DispatchQueue.main.async {
 				// Only enable the ability to change camera if the device has more than one camera.
-				self.recordButton.isEnabled = isSessionRunning && self.movieFileOutput != nil
 				self.photoButton.isEnabled = isSessionRunning
 				self.captureModeControl.isEnabled = isSessionRunning
 			}
@@ -622,17 +409,6 @@ class CameraViewController: UIViewController, AVCaptureFileOutputRecordingDelega
 		keyValueObservations.append(keyValueObservation)
 		
 		NotificationCenter.default.addObserver(self, selector: #selector(subjectAreaDidChange), name: .AVCaptureDeviceSubjectAreaDidChange, object: videoDeviceInput.device)
-		NotificationCenter.default.addObserver(self, selector: #selector(sessionRuntimeError), name: .AVCaptureSessionRuntimeError, object: session)
-		
-		/*
-			A session can only run when the app is full screen. It will be interrupted
-			in a multi-app layout, introduced in iOS 9, see also the documentation of
-			AVCaptureSessionInterruptionReason. Add observers to handle these session
-			interruptions and show a preview is paused message. See the documentation
-			of AVCaptureSessionWasInterruptedNotification for other interruption reasons.
-		*/
-		NotificationCenter.default.addObserver(self, selector: #selector(sessionWasInterrupted), name: .AVCaptureSessionWasInterrupted, object: session)
-		NotificationCenter.default.addObserver(self, selector: #selector(sessionInterruptionEnded), name: .AVCaptureSessionInterruptionEnded, object: session)
 	}
 	
 	private func removeObservers() {
@@ -648,96 +424,6 @@ class CameraViewController: UIViewController, AVCaptureFileOutputRecordingDelega
 	func subjectAreaDidChange(notification: NSNotification) {
 		let devicePoint = CGPoint(x: 0.5, y: 0.5)
 		focus(with: .continuousAutoFocus, exposureMode: .continuousAutoExposure, at: devicePoint, monitorSubjectAreaChange: false)
-	}
-	
-	@objc
-	func sessionRuntimeError(notification: NSNotification) {
-		guard let error = notification.userInfo?[AVCaptureSessionErrorKey] as? AVError else { return }
-		
-		print("Capture session runtime error: \(error)")
-		
-		/*
-			Automatically try to restart the session running if media services were
-			reset and the last start running succeeded. Otherwise, enable the user
-			to try to resume the session running.
-		*/
-		if error.code == .mediaServicesWereReset {
-			sessionQueue.async {
-				if self.isSessionRunning {
-					self.session.startRunning()
-					self.isSessionRunning = self.session.isRunning
-				} else {
-					DispatchQueue.main.async {
-						self.resumeButton.isHidden = false
-					}
-				}
-			}
-		} else {
-            resumeButton.isHidden = false
-		}
-	}
-	
-	@objc
-	func sessionWasInterrupted(notification: NSNotification) {
-		/*
-			In some scenarios we want to enable the user to resume the session running.
-			For example, if music playback is initiated via control center while
-			using AVCam, then the user can let AVCam resume
-			the session running, which will stop music playback. Note that stopping
-			music playback in control center will not automatically resume the session
-			running. Also note that it is not always possible to resume, see `resumeInterruptedSession(_:)`.
-		*/
-        if let userInfoValue = notification.userInfo?[AVCaptureSessionInterruptionReasonKey] as AnyObject?,
-			let reasonIntegerValue = userInfoValue.integerValue,
-			let reason = AVCaptureSession.InterruptionReason(rawValue: reasonIntegerValue) {
-			print("Capture session was interrupted with reason \(reason)")
-			
-			var showResumeButton = false
-			
-			if reason == .audioDeviceInUseByAnotherClient || reason == .videoDeviceInUseByAnotherClient {
-				showResumeButton = true
-			} else if reason == .videoDeviceNotAvailableWithMultipleForegroundApps {
-				// Simply fade-in a label to inform the user that the camera is unavailable.
-				cameraUnavailableLabel.alpha = 0
-				cameraUnavailableLabel.isHidden = false
-				UIView.animate(withDuration: 0.25) {
-					self.cameraUnavailableLabel.alpha = 1
-				}
-			}
-			
-			if showResumeButton {
-				// Simply fade-in a button to enable the user to try to resume the session running.
-				resumeButton.alpha = 0
-				resumeButton.isHidden = false
-				UIView.animate(withDuration: 0.25) {
-					self.resumeButton.alpha = 1
-				}
-			}
-		}
-	}
-	
-	@objc
-	func sessionInterruptionEnded(notification: NSNotification) {
-		print("Capture session interruption ended")
-		
-		if !resumeButton.isHidden {
-			UIView.animate(withDuration: 0.25,
-				animations: {
-					self.resumeButton.alpha = 0
-				}, completion: { _ in
-					self.resumeButton.isHidden = true
-				}
-			)
-		}
-		if !cameraUnavailableLabel.isHidden {
-			UIView.animate(withDuration: 0.25,
-			    animations: {
-					self.cameraUnavailableLabel.alpha = 0
-				}, completion: { _ in
-					self.cameraUnavailableLabel.isHidden = true
-				}
-			)
-		}
 	}
 }
 
