@@ -17,7 +17,6 @@ class CameraViewController: UIViewController {
 		
 		// Disable UI. The UI is enabled if and only if the session starts running.
 		photoButton.isEnabled = false
-		captureModeControl.isEnabled = false
 		
 		// Set up the video preview view.
 		previewView.session = session
@@ -270,32 +269,6 @@ class CameraViewController: UIViewController {
 	private enum CaptureMode: Int {
 		case photo = 0
 	}
-
-	@IBOutlet private weak var captureModeControl: UISegmentedControl!
-	
-	@IBAction private func toggleCaptureMode(_ captureModeControl: UISegmentedControl) {
-		captureModeControl.isEnabled = false
-		
-		if captureModeControl.selectedSegmentIndex == CaptureMode.photo.rawValue {
-			
-			sessionQueue.async {
-				/*
-					Remove the AVCaptureMovieFileOutput from the session because movie recording is
-					not supported with AVCaptureSession.Preset.Photo. Additionally, Live Photo
-					capture is not supported when an AVCaptureMovieFileOutput is connected to the session.
-				*/
-				self.session.beginConfiguration()
-                self.session.sessionPreset = .photo
-				
-				DispatchQueue.main.async {
-					captureModeControl.isEnabled = true
-				}
-								
-				self.session.commitConfiguration()
-			}
-		}
-	}
-	
 	// MARK: Device Configuration
 	
 	@IBOutlet private weak var cameraUnavailableLabel: UILabel!
@@ -403,7 +376,6 @@ class CameraViewController: UIViewController {
 			DispatchQueue.main.async {
 				// Only enable the ability to change camera if the device has more than one camera.
 				self.photoButton.isEnabled = isSessionRunning
-				self.captureModeControl.isEnabled = isSessionRunning
 			}
 		}
 		keyValueObservations.append(keyValueObservation)
