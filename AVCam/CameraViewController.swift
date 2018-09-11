@@ -12,11 +12,28 @@ import Photos
 class CameraViewController: UIViewController {
 	// MARK: View Controller Life Cycle
 	
+    var photoConstraint1 = NSLayoutConstraint()
+    var photoConstraint2 = NSLayoutConstraint()
+    
     override func viewDidLoad() {
 		super.viewDidLoad()
 		
 		// Disable UI. The UI is enabled if and only if the session starts running.
 		photoButton.isEnabled = false
+        if UIDeviceOrientationIsLandscape(UIDevice.current.orientation){
+            print("Landscape")
+            photoConstraint1 = NSLayoutConstraint(item: photoButton, attribute: .centerY, relatedBy: .equal, toItem: self.view, attribute: .centerY, multiplier: 1, constant: 0)
+            photoConstraint2 = NSLayoutConstraint(item: photoButton, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: 0)
+            self.view.addConstraint(photoConstraint1)
+            self.view.addConstraint(photoConstraint2)
+        }
+        else{
+            print("Portrait")
+            photoConstraint1 = NSLayoutConstraint(item: photoButton, attribute: .centerX, relatedBy: .equal, toItem: self.view, attribute: .centerX, multiplier: 1, constant: 0)
+            photoConstraint2 = NSLayoutConstraint(item: photoButton, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: 0)
+            self.view.addConstraint(photoConstraint1)
+            self.view.addConstraint(photoConstraint2)
+        }
 		
 		// Set up the video preview view.
 		previewView.session = session
@@ -356,6 +373,7 @@ class CameraViewController: UIViewController {
 		keyValueObservations.append(keyValueObservation)
 		
 		NotificationCenter.default.addObserver(self, selector: #selector(subjectAreaDidChange), name: .AVCaptureDeviceSubjectAreaDidChange, object: videoDeviceInput.device)
+//        NotificationCenter.default.addObserver(self, selector: #selector(screenRotated), name: .UIDeviceOrientationDidChange, object: nil)
 	}
 	
 	private func removeObservers() {
@@ -372,6 +390,25 @@ class CameraViewController: UIViewController {
 		let devicePoint = CGPoint(x: 0.5, y: 0.5)
 		focus(with: .continuousAutoFocus, exposureMode: .continuousAutoExposure, at: devicePoint, monitorSubjectAreaChange: false)
 	}
+    
+    override func willTransition(to newCollection: UITraitCollection, with coordinator: UIViewControllerTransitionCoordinator) {
+        if UIDeviceOrientationIsLandscape(UIDevice.current.orientation){
+            print("Landscape")
+            self.view.removeConstraints([photoConstraint1, photoConstraint2])
+            photoConstraint1 = NSLayoutConstraint(item: photoButton, attribute: .centerY, relatedBy: .equal, toItem: self.view, attribute: .centerY, multiplier: 1, constant: 0)
+            photoConstraint2 = NSLayoutConstraint(item: photoButton, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: 0)
+            self.view.addConstraint(photoConstraint1)
+            self.view.addConstraint(photoConstraint2)
+        }
+        else{
+            print("Portrait")
+            self.view.removeConstraints([photoConstraint1, photoConstraint2])
+            photoConstraint1 = NSLayoutConstraint(item: photoButton, attribute: .centerX, relatedBy: .equal, toItem: self.view, attribute: .centerX, multiplier: 1, constant: 0)
+            photoConstraint2 = NSLayoutConstraint(item: photoButton, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: 0)
+            self.view.addConstraint(photoConstraint1)
+            self.view.addConstraint(photoConstraint2)
+        }
+    }
 }
 
 extension AVCaptureVideoOrientation {
