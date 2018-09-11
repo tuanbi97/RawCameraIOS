@@ -271,7 +271,6 @@ class CameraViewController: UIViewController {
 	}
 	// MARK: Device Configuration
 	
-	@IBOutlet private weak var cameraUnavailableLabel: UILabel!
 	private let videoDeviceDiscoverySession = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera, .builtInDualCamera],
                                                                                mediaType: .video, position: .unspecified)
 	
