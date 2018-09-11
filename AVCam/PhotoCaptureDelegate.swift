@@ -8,7 +8,7 @@ Photo capture delegate.
 import AVFoundation
 import Photos
 
-class PhotoCaptureProcessor: NSObject {
+class PhotoCaptureProcessor: NSObject{
 	private(set) var requestedPhotoSettings: AVCapturePhotoSettings
 	
 	private let completionHandler: (PhotoCaptureProcessor) -> Void

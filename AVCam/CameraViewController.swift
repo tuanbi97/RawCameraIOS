@@ -314,7 +314,6 @@ class CameraViewController: UIViewController {
 			the main thread and session configuration is done on the session queue.
 		*/
         let videoPreviewLayerOrientation = previewView.videoPreviewLayer.connection?.videoOrientation
-		
 		sessionQueue.async {
 			// Update the photo output's connection to match the video orientation of the video preview layer.
             if let photoOutputConnection = self.photoOutput.connection(with: .video) {
@@ -323,6 +322,7 @@ class CameraViewController: UIViewController {
 			
             var photoSettings = AVCapturePhotoSettings()
             // Capture HEIF photo when supported, with flash set to auto and high resolution photo enabled.
+            
             if  self.photoOutput.availablePhotoCodecTypes.contains(.hevc) {
                 
             photoSettings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.hevc])
