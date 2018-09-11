@@ -172,10 +172,6 @@ class CameraViewController: UIViewController {
 		
 		session.beginConfiguration()
 		
-		/*
-			We do not create an AVCaptureMovieFileOutput when setting up the session because the
-			AVCaptureMovieFileOutput does not support movie recording with AVCaptureSession.Preset.Photo.
-		*/
 		session.sessionPreset = .photo
 		
 		// Add video input.
@@ -188,13 +184,7 @@ class CameraViewController: UIViewController {
             } else if let backCameraDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) {
 				// If the back dual camera is not available, default to the back wide angle camera.
 				defaultVideoDevice = backCameraDevice
-            } else if let frontCameraDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front) {
-				/*
-                   In some cases where users break their phones, the back wide angle camera is not available.
-                   In this case, we should default to the front wide angle camera.
-                */
-				defaultVideoDevice = frontCameraDevice
-			}
+            }
 			
             let videoDeviceInput = try AVCaptureDeviceInput(device: defaultVideoDevice!)
 			
@@ -216,7 +206,7 @@ class CameraViewController: UIViewController {
 					let statusBarOrientation = UIApplication.shared.statusBarOrientation
 					var initialVideoOrientation: AVCaptureVideoOrientation = .portrait
 					if statusBarOrientation != .unknown {
-						if let videoOrientation = AVCaptureVideoOrientation(interfaceOrientation: statusBarOrientation) {
+							if let videoOrientation = AVCaptureVideoOrientation(interfaceOrientation: statusBarOrientation) {
 							initialVideoOrientation = videoOrientation
 						}
 					}
@@ -234,20 +224,6 @@ class CameraViewController: UIViewController {
 			setupResult = .configurationFailed
 			session.commitConfiguration()
 			return
-		}
-		
-		// Add audio input.
-		do {
-            let audioDevice = AVCaptureDevice.default(for: .audio)
-            let audioDeviceInput = try AVCaptureDeviceInput(device: audioDevice!)
-			
-			if session.canAddInput(audioDeviceInput) {
-				session.addInput(audioDeviceInput)
-			} else {
-				print("Could not add audio device input to the session")
-			}
-		} catch {
-			print("Could not create audio device input: \(error)")
 		}
 		
 		// Add photo output.
