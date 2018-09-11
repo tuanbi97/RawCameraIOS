@@ -325,7 +325,8 @@ class CameraViewController: UIViewController {
             
             if  self.photoOutput.availablePhotoCodecTypes.contains(.hevc) {
                 
-            photoSettings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.hevc])
+                guard let availableRawFormat = self.photoOutput.availableRawPhotoPixelFormatTypes.first else {return}
+                photoSettings = AVCapturePhotoSettings(rawPixelFormatType: availableRawFormat, processedFormat: [AVVideoCodecKey: AVVideoCodecType.hevc])
 
             }
             

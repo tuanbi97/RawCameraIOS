@@ -14,6 +14,7 @@ class PhotoCaptureProcessor: NSObject{
 	private let completionHandler: (PhotoCaptureProcessor) -> Void
 	
 	private var photoData: Data?
+    private var rawImageFileURL: URL?
 
 	init(with requestedPhotoSettings: AVCapturePhotoSettings,
 	     completionHandler: @escaping (PhotoCaptureProcessor) -> Void) {
@@ -40,8 +41,34 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
         if let error = error {
             print("Error capturing photo: \(error)")
         } else {
-            photoData = photo.fileDataRepresentation()
+            if photo.isRawPhoto {
+                let dngFileURL = self.makeUniqueTempFileURL(extension: "dng")
+                rawImageFileURL = dngFileURL
+                do{
+                    print(dngFileURL)
+                    try photo.fileDataRepresentation()!.write(to: dngFileURL)
+                } catch {
+                    fatalError("Couldn't write DNG file to URL")
+                }
+            }
+            else{
+                photoData = photo.fileDataRepresentation()
+            }
         }
+    }
+    
+    func makeUniqueTempFileURL(extension type:String) -> URL{
+        var temporaryDirectoryURL = FileManager.default.temporaryDirectory
+        do{
+            temporaryDirectoryURL = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+        }
+        catch{
+            print(error)
+        }
+        let uniqueFileName = ProcessInfo.processInfo.globallyUniqueString
+        let urlNoExt = temporaryDirectoryURL.appendingPathComponent(uniqueFileName)
+        let url = urlNoExt.appendingPathExtension(type)
+        return url
     }
     
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings, error: Error?) {
@@ -57,6 +84,12 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
             return
         }
         
+        guard let rawURL = self.rawImageFileURL else {
+            print("No raw photo url resource")
+            didFinish()
+            return
+        }
+        
         PHPhotoLibrary.requestAuthorization { status in
             if status == .authorized {
                 PHPhotoLibrary.shared().performChanges({
@@ -64,6 +97,9 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
                     let creationRequest = PHAssetCreationRequest.forAsset()
                     options.uniformTypeIdentifier = self.requestedPhotoSettings.processedFileType.map { $0.rawValue }
                     creationRequest.addResource(with: .photo, data: photoData, options: options)
+                    
+                    let rawOptions = PHAssetResourceCreationOptions()
+                    creationRequest.addResource(with: .alternatePhoto, fileURL: rawURL, options: rawOptions)
                     
                     }, completionHandler: { _, error in
                         if let error = error {
