@@ -65,7 +65,19 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
         catch{
             print(error)
         }
-        let uniqueFileName = ProcessInfo.processInfo.globallyUniqueString
+        let currentDateTime = Date()
+        let userCalendar = Calendar.current
+        let requestedComponents: Set<Calendar.Component> = [
+            .year,
+            .month,
+            .day,
+            .hour,
+            .minute,
+            .second,
+            .nanosecond
+        ]
+        let date = userCalendar.dateComponents(requestedComponents, from: currentDateTime)
+        let uniqueFileName = "RAW_\(date.year!)_\(date.month!)_\(date.day!)_\(date.hour!)_\(date.minute!)_\(date.second!)_\(date.nanosecond! / 1000000)"
         let urlNoExt = temporaryDirectoryURL.appendingPathComponent(uniqueFileName)
         let url = urlNoExt.appendingPathExtension(type)
         return url
