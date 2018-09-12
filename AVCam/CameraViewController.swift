@@ -269,10 +269,10 @@ class CameraViewController: UIViewController {
 	
 	@IBAction private func focusAndExposeTap(_ gestureRecognizer: UITapGestureRecognizer) {
         let devicePoint = previewView.videoPreviewLayer.captureDevicePointConverted(fromLayerPoint: gestureRecognizer.location(in: gestureRecognizer.view))
-		focus(with: .autoFocus, exposureMode: .autoExpose, at: devicePoint, monitorSubjectAreaChange: true)
+        focus(with: .autoFocus, exposureMode: .autoExpose, wbMode: .autoWhiteBalance, at: devicePoint, monitorSubjectAreaChange: true)
 	}
 	
-    private func focus(with focusMode: AVCaptureDevice.FocusMode, exposureMode: AVCaptureDevice.ExposureMode, at devicePoint: CGPoint, monitorSubjectAreaChange: Bool) {
+    private func focus(with focusMode: AVCaptureDevice.FocusMode, exposureMode: AVCaptureDevice.ExposureMode, wbMode: AVCaptureDevice.WhiteBalanceMode, at devicePoint: CGPoint, monitorSubjectAreaChange: Bool) {
         sessionQueue.async {
             let device = self.videoDeviceInput.device
             do {
@@ -282,6 +282,7 @@ class CameraViewController: UIViewController {
 					Setting (focus/exposure)PointOfInterest alone does not initiate a (focus/exposure) operation.
 					Call set(Focus/Exposure)Mode() to apply the new point of interest.
 				*/
+                
                 if device.isFocusPointOfInterestSupported && device.isFocusModeSupported(focusMode) {
                     device.focusPointOfInterest = devicePoint
                     device.focusMode = focusMode
@@ -290,6 +291,10 @@ class CameraViewController: UIViewController {
                 if device.isExposurePointOfInterestSupported && device.isExposureModeSupported(exposureMode) {
                     device.exposurePointOfInterest = devicePoint
                     device.exposureMode = exposureMode
+                }
+                
+                if device.isWhiteBalanceModeSupported(wbMode){
+                    device.whiteBalanceMode = wbMode
                 }
                 
                 device.isSubjectAreaChangeMonitoringEnabled = monitorSubjectAreaChange
@@ -389,7 +394,7 @@ class CameraViewController: UIViewController {
 	@objc
 	func subjectAreaDidChange(notification: NSNotification) {
 		let devicePoint = CGPoint(x: 0.5, y: 0.5)
-		focus(with: .continuousAutoFocus, exposureMode: .continuousAutoExposure, at: devicePoint, monitorSubjectAreaChange: false)
+        focus(with: .continuousAutoFocus, exposureMode: .continuousAutoExposure, wbMode: .continuousAutoWhiteBalance, at: devicePoint, monitorSubjectAreaChange: false)
 	}
     
     override func willTransition(to newCollection: UITraitCollection, with coordinator: UIViewControllerTransitionCoordinator) {

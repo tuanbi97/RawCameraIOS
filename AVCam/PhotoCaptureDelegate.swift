@@ -45,7 +45,7 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
                 let dngFileURL = self.makeUniqueTempFileURL(extension: "dng")
                 rawImageFileURL = dngFileURL
                 do{
-                    print(dngFileURL)
+                    //print(dngFileURL)
                     try photo.fileDataRepresentation()!.write(to: dngFileURL)
                 } catch {
                     fatalError("Couldn't write DNG file to URL")
