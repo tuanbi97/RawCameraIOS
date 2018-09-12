@@ -336,7 +336,7 @@ class CameraViewController: UIViewController {
             }
             
             if self.videoDeviceInput.device.isFlashAvailable {
-                photoSettings.flashMode = .auto
+                photoSettings.flashMode = .off
             }
             
 			photoSettings.isHighResolutionPhotoEnabled = true
@@ -345,7 +345,7 @@ class CameraViewController: UIViewController {
 			}
 			
 			// Use a separate object for the photo capture delegate to isolate each capture life cycle.
-            let photoCaptureProcessor = PhotoCaptureProcessor(with: photoSettings, completionHandler: { photoCaptureProcessor in
+            var photoCaptureProcessor = PhotoCaptureProcessor(with: photoSettings, completionHandler: { photoCaptureProcessor in
 					// When the capture is complete, remove a reference to the photo capture delegate so it can be deallocated.
 					self.sessionQueue.async {
 						self.inProgressPhotoCaptureDelegates[photoCaptureProcessor.requestedPhotoSettings.uniqueID] = nil
@@ -360,6 +360,48 @@ class CameraViewController: UIViewController {
 			*/
 			self.inProgressPhotoCaptureDelegates[photoCaptureProcessor.requestedPhotoSettings.uniqueID] = photoCaptureProcessor
 			self.photoOutput.capturePhoto(with: photoSettings, delegate: photoCaptureProcessor)
+            
+            // Second camera
+            // Update the photo output's connection to match the video orientation of the video preview layer.
+            if let photoOutputConnection = self.photoOutput.connection(with: .video) {
+                photoOutputConnection.videoOrientation = videoPreviewLayerOrientation!
+            }
+            
+            photoSettings = AVCapturePhotoSettings()
+            // Capture HEIF photo when supported, with flash set to auto and high resolution photo enabled.
+            
+            if  self.photoOutput.availablePhotoCodecTypes.contains(.hevc) {
+                
+                guard let availableRawFormat = self.photoOutput.availableRawPhotoPixelFormatTypes.first else {return}
+                photoSettings = AVCapturePhotoSettings(rawPixelFormatType: availableRawFormat, processedFormat: [AVVideoCodecKey: AVVideoCodecType.hevc])
+                
+            }
+            
+            if self.videoDeviceInput.device.isFlashAvailable {
+                photoSettings.flashMode = .on
+            }
+            
+            photoSettings.isHighResolutionPhotoEnabled = true
+            if !photoSettings.__availablePreviewPhotoPixelFormatTypes.isEmpty {
+                photoSettings.previewPhotoFormat = [kCVPixelBufferPixelFormatTypeKey as String: photoSettings.__availablePreviewPhotoPixelFormatTypes.first!]
+            }
+            
+            // Use a separate object for the photo capture delegate to isolate each capture life cycle.
+            photoCaptureProcessor = PhotoCaptureProcessor(with: photoSettings, completionHandler: { photoCaptureProcessor in
+                // When the capture is complete, remove a reference to the photo capture delegate so it can be deallocated.
+                self.sessionQueue.async {
+                    self.inProgressPhotoCaptureDelegates[photoCaptureProcessor.requestedPhotoSettings.uniqueID] = nil
+                }
+            }
+            )
+            
+            /*
+             The Photo Output keeps a weak reference to the photo capture delegate so
+             we store it in an array to maintain a strong reference to this object
+             until the capture is completed.
+             */
+            self.inProgressPhotoCaptureDelegates[photoCaptureProcessor.requestedPhotoSettings.uniqueID] = photoCaptureProcessor
+            self.photoOutput.capturePhoto(with: photoSettings, delegate: photoCaptureProcessor)
 		}
 	}
 	
