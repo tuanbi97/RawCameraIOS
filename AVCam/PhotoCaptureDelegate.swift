@@ -15,12 +15,34 @@ class PhotoCaptureProcessor: NSObject{
 	
 	private var photoData: Data?
     private var rawImageFileURL: URL?
+    private var jpgImageFileURL: URL?
+    private var flashMode: Int?
+    private var fileName: String?
 
 	init(with requestedPhotoSettings: AVCapturePhotoSettings,
 	     completionHandler: @escaping (PhotoCaptureProcessor) -> Void) {
 		self.requestedPhotoSettings = requestedPhotoSettings
 		self.completionHandler = completionHandler
+        self.flashMode = requestedPhotoSettings.flashMode.rawValue
+        self.fileName = ""
 	}
+    
+    private func makeUniqueFileName() -> String{
+        let currentDateTime = Date()
+        let userCalendar = Calendar.current
+        let requestedComponents: Set<Calendar.Component> = [
+            .year,
+            .month,
+            .day,
+            .hour,
+            .minute,
+            .second,
+            .nanosecond
+        ]
+        let date = userCalendar.dateComponents(requestedComponents, from: currentDateTime)
+        let uniqueFileName = String(format: "%d_%02d_%02d_%02d_%02d_%02d_%03d", date.year!, date.month!, date.day!, date.hour!, date.minute!, date.second!, date.nanosecond! / 1000000)
+        return uniqueFileName
+    }
 	
 	private func didFinish() {
 		completionHandler(self)
@@ -37,7 +59,6 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
     }
     
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-        
         if let error = error {
             print("Error capturing photo: \(error)")
         } else {
@@ -52,7 +73,14 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
                 }
             }
             else{
-                photoData = photo.fileDataRepresentation()
+                let jpgFileURL = self.makeUniqueTempFileURL(extension: "jpg")
+                jpgImageFileURL = jpgFileURL
+                do{
+                    try photo.fileDataRepresentation()!.write(to: jpgFileURL)
+                } catch{
+                    fatalError("Couldn't write JPG file to URL")
+                }
+                //photoData = photo.fileDataRepresentation()
             }
         }
     }
@@ -65,19 +93,13 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
         catch{
             print(error)
         }
-        let currentDateTime = Date()
-        let userCalendar = Calendar.current
-        let requestedComponents: Set<Calendar.Component> = [
-            .year,
-            .month,
-            .day,
-            .hour,
-            .minute,
-            .second,
-            .nanosecond
-        ]
-        let date = userCalendar.dateComponents(requestedComponents, from: currentDateTime)
-        let uniqueFileName = "RAW_\(date.year!)_\(date.month!)_\(date.day!)_\(date.hour!)_\(date.minute!)_\(date.second!)_\(date.nanosecond! / 1000000)"
+        if self.fileName == "" {
+            self.fileName = self.makeUniqueFileName()
+        }
+        var uniqueFileName = "RAW_" + self.fileName!
+        if (type == "jpg"){
+            uniqueFileName = "JPEG_" + self.fileName!
+        }
         let urlNoExt = temporaryDirectoryURL.appendingPathComponent(uniqueFileName)
         let url = urlNoExt.appendingPathExtension(type)
         return url
@@ -90,14 +112,14 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
             return
         }
         
-        guard let photoData = photoData else {
-            print("No photo data resource")
+        guard let rawURL = self.rawImageFileURL else {
+            print("No raw photo url resource")
             didFinish()
             return
         }
         
-        guard let rawURL = self.rawImageFileURL else {
-            print("No raw photo url resource")
+        guard let jpgURL = self.jpgImageFileURL else {
+            print("No jpg photo url resource")
             didFinish()
             return
         }
@@ -105,10 +127,14 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
         PHPhotoLibrary.requestAuthorization { status in
             if status == .authorized {
                 PHPhotoLibrary.shared().performChanges({
-                    let options = PHAssetResourceCreationOptions()
+//                    let options = PHAssetResourceCreationOptions()
+//                    let creationRequest = PHAssetCreationRequest.forAsset()
+//                    options.uniformTypeIdentifier = self.requestedPhotoSettings.processedFileType.map { $0.rawValue }
+//                    creationRequest.addResource(with: .photo, data: photoData, options: options)
+                    
                     let creationRequest = PHAssetCreationRequest.forAsset()
-                    options.uniformTypeIdentifier = self.requestedPhotoSettings.processedFileType.map { $0.rawValue }
-                    creationRequest.addResource(with: .photo, data: photoData, options: options)
+                    let jpgOptions = PHAssetResourceCreationOptions()
+                    creationRequest.addResource(with: .alternatePhoto, fileURL: jpgURL, options: jpgOptions)
                     
                     let rawOptions = PHAssetResourceCreationOptions()
                     creationRequest.addResource(with: .alternatePhoto, fileURL: rawURL, options: rawOptions)
