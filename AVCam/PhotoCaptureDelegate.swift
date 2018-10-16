@@ -96,9 +96,9 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
         if self.fileName == "" {
             self.fileName = self.makeUniqueFileName()
         }
-        var uniqueFileName = "RAW_" + self.fileName!
+        var uniqueFileName = "RAW_" + self.fileName! + (self.flashMode == 0 ? "_noflash" : "_flash")
         if (type == "jpg"){
-            uniqueFileName = "JPEG_" + self.fileName!
+            uniqueFileName = "JPEG_" + self.fileName! + (self.flashMode == 0 ? "_noflash" : "_flash")
         }
         let urlNoExt = temporaryDirectoryURL.appendingPathComponent(uniqueFileName)
         let url = urlNoExt.appendingPathExtension(type)
