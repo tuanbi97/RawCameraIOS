@@ -317,9 +317,9 @@ class CameraViewController: UIViewController {
 			Retrieve the video preview layer's video orientation on the main queue before
 			entering the session queue. We do this to ensure UI elements are accessed on
 			the main thread and session configuration is done on the session queue.
-		*/
+		*/        
         let videoPreviewLayerOrientation = previewView.videoPreviewLayer.connection?.videoOrientation
-		sessionQueue.async {
+		sessionQueue.asyncAfter(deadline: .now() + 3) {
 			// Update the photo output's connection to match the video orientation of the video preview layer.
             if let photoOutputConnection = self.photoOutput.connection(with: .video) {
                 photoOutputConnection.videoOrientation = videoPreviewLayerOrientation!
@@ -403,7 +403,7 @@ class CameraViewController: UIViewController {
             self.inProgressPhotoCaptureDelegates[photoCaptureProcessor.requestedPhotoSettings.uniqueID] = photoCaptureProcessor
             self.photoOutput.capturePhoto(with: photoSettings, delegate: photoCaptureProcessor)
 		}
-	}
+    }
 	
 	// MARK: KVO and Notifications
 	
