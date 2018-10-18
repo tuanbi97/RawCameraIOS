@@ -1,4 +1,4 @@
-	/*
+    /*
 See LICENSE.txt for this sample’s licensing information.
 
 Abstract:
@@ -9,23 +9,23 @@ import AVFoundation
 import Photos
 
 class PhotoCaptureProcessor: NSObject{
-	private(set) var requestedPhotoSettings: AVCapturePhotoSettings
-	
-	private let completionHandler: (PhotoCaptureProcessor) -> Void
-	
-	private var photoData: Data?
+    private(set) var requestedPhotoSettings: AVCapturePhotoSettings
+    
+    private let completionHandler: (PhotoCaptureProcessor) -> Void
+    
+    private var photoData: Data?
     private var rawImageFileURL: URL?
     private var jpgImageFileURL: URL?
     private var flashMode: Int?
     private var fileName: String?
 
-	init(with requestedPhotoSettings: AVCapturePhotoSettings,
-	     completionHandler: @escaping (PhotoCaptureProcessor) -> Void) {
-		self.requestedPhotoSettings = requestedPhotoSettings
-		self.completionHandler = completionHandler
+    init(with requestedPhotoSettings: AVCapturePhotoSettings,
+         completionHandler: @escaping (PhotoCaptureProcessor) -> Void) {
+        self.requestedPhotoSettings = requestedPhotoSettings
+        self.completionHandler = completionHandler
         self.flashMode = requestedPhotoSettings.flashMode.rawValue
         self.fileName = ""
-	}
+    }
     
     private func makeUniqueFileName() -> String{
         let currentDateTime = Date()
@@ -43,10 +43,10 @@ class PhotoCaptureProcessor: NSObject{
         let uniqueFileName = String(format: "%d_%02d_%02d_%02d_%02d_%02d_%03d", date.year!, date.month!, date.day!, date.hour!, date.minute!, date.second!, date.nanosecond! / 1000000)
         return uniqueFileName
     }
-	
-	private func didFinish() {
-		completionHandler(self)
-	}
+    
+    private func didFinish() {
+        completionHandler(self)
+    }
     
 }
 
