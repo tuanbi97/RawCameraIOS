@@ -18,28 +18,32 @@ class CameraViewController: UIViewController {
     let orientationEstimator = objcMadgwickAHRS()
     func startSensors(){
         if self.motion.isAccelerometerAvailable && self.motion.isGyroAvailable {
-            self.motion.accelerometerUpdateInterval = 1.0 / 60.0
+            self.motion.accelerometerUpdateInterval = 1.0 / 50.0
             self.motion.startAccelerometerUpdates()
             
-            self.motion.gyroUpdateInterval = 1.0 / 60.0
+            self.motion.gyroUpdateInterval = 1.0 / 50.0
             self.motion.startGyroUpdates()
             
-            self.timerSensor = Timer(fire: Date(), interval: (1.0 / 60.0), repeats: true, block: {(timer) in
+            self.timerSensor = Timer(fire: Date(), interval: (1.0 / 50.0), repeats: true, block: {(timer) in
                 if  let acc = self.motion.accelerometerData, let gyr = self.motion.gyroData{
-                    let ax = Float(acc.acceleration.x)
-                    let ay = Float(acc.acceleration.y)
-                    let az = Float(acc.acceleration.z)
-                    let gx = Float(gyr.rotationRate.x)
-                    let gy = Float(gyr.rotationRate.y)
-                    let gz = Float(gyr.rotationRate.z)
-                    print("\(ax) \(ay) \(az) ,, \(gx) \(gy) \(gz)")
+                    var ax = [-Double(acc.acceleration.x)]
+                    var ay = [-Double(acc.acceleration.y)]
+                    var az = [-Double(acc.acceleration.z)]
+                    var gx = [Double(gyr.rotationRate.x)]
+                    var gy = [Double(gyr.rotationRate.y)]
+                    var gz = [Double(gyr.rotationRate.z)]
+
                     //Solve orientation
-                    let stime = CFAbsoluteTimeGetCurrent()
-                    print(stime)
-                    self.orientationEstimator.madgwickUpdate(gx, gy: gy, gz: gz, ax: ax, ay: ay, az: az, withTime: Float(stime))
-                    var angles:[Float] = [0, 0, 0]
+                    var stime = [Double(CFAbsoluteTimeGetCurrent())]
+                    //print(stime)
+                    //print("\(gx[0]) \(gy[0]) \(gz[0]) \(ax[0]) \(ay[0]) \(az[0]) \(stime[0])")
+                    self.orientationEstimator.madgwickUpdate(&gx, gy: &gy, gz: &gz, ax: &ax, ay: &ay, az: &az, withTime: &stime)
+                    //self.orientationEstimator.madgwickUpdate("\(gx)", gy: "\(gy)", gz: "\(gz)", ax: "\(ax)", ay: "\(ay)", az: "\(az)", withTime: "\(stime)")
+                    var angles:[Double] = [0, 0, 0]
                     self.orientationEstimator.quaternion2YPR(&angles)
-                    print("\(angles[0]) \(angles[1]) \(angles[2])")
+                    
+                    //print("\(angles[0]) \(angles[1]) \(angles[2])\n")
+                    self.orientView.text = "P: \(Int(angles[1]))| R: \(Int(angles[2]))"
                 }
             })
             
@@ -51,6 +55,8 @@ class CameraViewController: UIViewController {
     var photoConstraint2 = NSLayoutConstraint()
     var previewConstraints: [NSLayoutConstraint] = []
     var timerConstraints: [NSLayoutConstraint] = []
+    var orientConstraints: [NSLayoutConstraint] = []
+    @IBOutlet weak var orientView: UILabel!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -65,10 +71,13 @@ class CameraViewController: UIViewController {
             previewConstraints.append(NSLayoutConstraint(item: previewView, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: -140))
             timerConstraints.append(NSLayoutConstraint(item: timerView, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: -60))
             timerConstraints.append(NSLayoutConstraint(item: timerView, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: -30))
+            orientConstraints.append(NSLayoutConstraint(item: orientView, attribute: .top, relatedBy: .equal, toItem: self.view, attribute: .top, multiplier: 1, constant: 50))
+            orientConstraints.append(NSLayoutConstraint(item: orientView, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: -20))
             self.view.addConstraint(photoConstraint1)
             self.view.addConstraint(photoConstraint2)
             self.view.addConstraints(previewConstraints)
             self.view.addConstraints(timerConstraints)
+            self.view.addConstraints(orientConstraints)
         }
         else{
             print("Portrait")
@@ -77,11 +86,14 @@ class CameraViewController: UIViewController {
             previewConstraints.append(NSLayoutConstraint(item: previewView, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: -140))
             previewConstraints.append(NSLayoutConstraint(item: previewView, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: 0))
             timerConstraints.append(NSLayoutConstraint(item: timerView, attribute: .leading, relatedBy: .equal, toItem: self.view, attribute: .leading, multiplier: 1, constant: 30))
-            timerConstraints.append(NSLayoutConstraint(item: timerView, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: -60))
+            timerConstraints.append(NSLayoutConstraint(item: timerView, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: -30))
+            orientConstraints.append(NSLayoutConstraint(item: orientView, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: -30))
+            orientConstraints.append(NSLayoutConstraint(item: orientView, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: -20))
             self.view.addConstraint(photoConstraint1)
             self.view.addConstraint(photoConstraint2)
             self.view.addConstraints(previewConstraints)
             self.view.addConstraints(timerConstraints)
+            self.view.addConstraints(orientConstraints)
         }
         
         // Set up the video preview view.
@@ -509,32 +521,40 @@ class CameraViewController: UIViewController {
             self.view.removeConstraints([photoConstraint1, photoConstraint2])
             self.view.removeConstraints(previewConstraints)
             self.view.removeConstraints(timerConstraints)
+            self.view.removeConstraints(orientConstraints)
             photoConstraint1 = NSLayoutConstraint(item: photoButton, attribute: .centerY, relatedBy: .equal, toItem: self.view, attribute: .centerY, multiplier: 1, constant: 0)
             photoConstraint2 = NSLayoutConstraint(item: photoButton, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: 0)
             previewConstraints[0] = NSLayoutConstraint(item: previewView, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: 0)
             previewConstraints[1] = NSLayoutConstraint(item: previewView, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: -140)
             timerConstraints[0] = NSLayoutConstraint(item: timerView, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: -60)
             timerConstraints[1] = NSLayoutConstraint(item: timerView, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: -30)
+            orientConstraints[0] = NSLayoutConstraint(item: orientView, attribute: .top, relatedBy: .equal, toItem: self.view, attribute: .top, multiplier: 1, constant: 50)
+            orientConstraints[1] = NSLayoutConstraint(item: orientView, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: -20)
             self.view.addConstraint(photoConstraint1)
             self.view.addConstraint(photoConstraint2)
             self.view.addConstraints(previewConstraints)
             self.view.addConstraints(timerConstraints)
+            self.view.addConstraints(orientConstraints)
         }
         else{
             print("Portrait")
             self.view.removeConstraints([photoConstraint1, photoConstraint2])
             self.view.removeConstraints(previewConstraints)
             self.view.removeConstraints(timerConstraints)
+            self.view.removeConstraints(orientConstraints)
             photoConstraint1 = NSLayoutConstraint(item: photoButton, attribute: .centerX, relatedBy: .equal, toItem: self.view, attribute: .centerX, multiplier: 1, constant: 0)
             photoConstraint2 = NSLayoutConstraint(item: photoButton, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: 0)
             previewConstraints[0] = NSLayoutConstraint(item: previewView, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: -140)
             previewConstraints[1] = NSLayoutConstraint(item: previewView, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: 0)
             timerConstraints[0] = NSLayoutConstraint(item: timerView, attribute: .leading, relatedBy: .equal, toItem: self.view, attribute: .leading, multiplier: 1, constant: 30)
             timerConstraints[1] = NSLayoutConstraint(item: timerView, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: -60)
+            orientConstraints[0] = NSLayoutConstraint(item: orientView, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: -30)
+            orientConstraints[1] = NSLayoutConstraint(item: orientView, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: -20)
             self.view.addConstraint(photoConstraint1)
             self.view.addConstraint(photoConstraint2)
             self.view.addConstraints(previewConstraints)
             self.view.addConstraints(timerConstraints)
+            self.view.addConstraints(orientConstraints)
         }
     }
 }
