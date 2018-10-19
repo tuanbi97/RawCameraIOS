@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		17738BD82179769D0040A702 /* MadgwickAHRS.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 17738BD52179769D0040A702 /* MadgwickAHRS.cpp */; };
+		17738BD92179769D0040A702 /* objcMadgwickAHRS.mm in Sources */ = {isa = PBXBuildFile; fileRef = 17738BD72179769D0040A702 /* objcMadgwickAHRS.mm */; };
 		7AA677151CFF765600B353FB /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AA677141CFF765600B353FB /* AppDelegate.swift */; };
 		7AA677171CFF765600B353FB /* CameraViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AA677161CFF765600B353FB /* CameraViewController.swift */; };
 		7AA6771A1CFF765600B353FB /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7AA677181CFF765600B353FB /* Main.storyboard */; };
@@ -17,6 +19,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		17738BD32179769C0040A702 /* AVCam-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AVCam-Bridging-Header.h"; sourceTree = "<group>"; };
+		17738BD42179769C0040A702 /* MadgwickAHRS.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MadgwickAHRS.h; sourceTree = "<group>"; };
+		17738BD52179769D0040A702 /* MadgwickAHRS.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MadgwickAHRS.cpp; sourceTree = "<group>"; };
+		17738BD62179769D0040A702 /* objcMadgwickAHRS.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = objcMadgwickAHRS.h; sourceTree = "<group>"; };
+		17738BD72179769D0040A702 /* objcMadgwickAHRS.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = objcMadgwickAHRS.mm; sourceTree = "<group>"; };
 		3E25DCAF1F7EA506007EF37E /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = LICENSE.txt; path = ../../LICENSE.txt; sourceTree = "<group>"; };
 		7AA677111CFF765600B353FB /* AVCam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AVCam.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7AA677141CFF765600B353FB /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -73,6 +80,10 @@
 		7AA677131CFF765600B353FB /* AVCam */ = {
 			isa = PBXGroup;
 			children = (
+				17738BD52179769D0040A702 /* MadgwickAHRS.cpp */,
+				17738BD42179769C0040A702 /* MadgwickAHRS.h */,
+				17738BD62179769D0040A702 /* objcMadgwickAHRS.h */,
+				17738BD72179769D0040A702 /* objcMadgwickAHRS.mm */,
 				7AA677141CFF765600B353FB /* AppDelegate.swift */,
 				7AA677281CFF7B5C00B353FB /* PreviewView.swift */,
 				7AA677161CFF765600B353FB /* CameraViewController.swift */,
@@ -81,6 +92,7 @@
 				7AA6771B1CFF765600B353FB /* Assets.xcassets */,
 				7AA6771D1CFF765600B353FB /* LaunchScreen.storyboard */,
 				7AA677201CFF765600B353FB /* Info.plist */,
+				17738BD32179769C0040A702 /* AVCam-Bridging-Header.h */,
 			);
 			path = AVCam;
 			sourceTree = "<group>";
@@ -126,6 +138,7 @@
 					7AA677101CFF765500B353FB = {
 						CreatedOnToolsVersion = 8.0;
 						DevelopmentTeam = 8W48V35CQE;
+						LastSwiftMigration = 0940;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -166,9 +179,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				17738BD82179769D0040A702 /* MadgwickAHRS.cpp in Sources */,
 				7AA677271CFF774800B353FB /* PhotoCaptureDelegate.swift in Sources */,
 				7AA677291CFF7B5C00B353FB /* PreviewView.swift in Sources */,
 				7AA677171CFF765600B353FB /* CameraViewController.swift in Sources */,
+				17738BD92179769D0040A702 /* objcMadgwickAHRS.mm in Sources */,
 				7AA677151CFF765600B353FB /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -297,6 +312,7 @@
 			baseConfigurationReference = C0E23044F2276005EA5958F2 /* SampleCode.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = 8W48V35CQE;
 				INFOPLIST_FILE = AVCam/Info.plist;
@@ -306,6 +322,8 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "AVCam/AVCam-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
@@ -315,6 +333,7 @@
 			baseConfigurationReference = C0E23044F2276005EA5958F2 /* SampleCode.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = 8W48V35CQE;
 				INFOPLIST_FILE = AVCam/Info.plist;
@@ -324,6 +343,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
+				SWIFT_OBJC_BRIDGING_HEADER = "AVCam/AVCam-Bridging-Header.h";
 				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
