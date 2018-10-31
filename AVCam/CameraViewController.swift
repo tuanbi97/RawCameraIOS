@@ -57,10 +57,13 @@ class CameraViewController: UIViewController {
     var timerConstraints: [NSLayoutConstraint] = []
     var orientConstraints: [NSLayoutConstraint] = []
     @IBOutlet weak var orientView: UILabel!
+    @IBOutlet weak var centerbox: UILabel!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         startSensors()
+        centerbox.layer.borderWidth = 4.0
+        centerbox.layer.borderColor = UIColor.green.cgColor
         // Disable UI. The UI is enabled if and only if the session starts running.
         photoButton.isEnabled = false
         if UIDeviceOrientationIsLandscape(UIDevice.current.orientation){
@@ -73,6 +76,7 @@ class CameraViewController: UIViewController {
             timerConstraints.append(NSLayoutConstraint(item: timerView, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: -30))
             orientConstraints.append(NSLayoutConstraint(item: orientView, attribute: .top, relatedBy: .equal, toItem: self.view, attribute: .top, multiplier: 1, constant: 50))
             orientConstraints.append(NSLayoutConstraint(item: orientView, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: -20))
+            centerbox.layer.borderWidth = 4.0
             self.view.addConstraint(photoConstraint1)
             self.view.addConstraint(photoConstraint2)
             self.view.addConstraints(previewConstraints)
@@ -89,6 +93,7 @@ class CameraViewController: UIViewController {
             timerConstraints.append(NSLayoutConstraint(item: timerView, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: -30))
             orientConstraints.append(NSLayoutConstraint(item: orientView, attribute: .bottom, relatedBy: .equal, toItem: self.view, attribute: .bottom, multiplier: 1, constant: -30))
             orientConstraints.append(NSLayoutConstraint(item: orientView, attribute: .trailing, relatedBy: .equal, toItem: self.view, attribute: .trailing, multiplier: 1, constant: -20))
+            centerbox.layer.borderWidth = 0.0
             self.view.addConstraint(photoConstraint1)
             self.view.addConstraint(photoConstraint2)
             self.view.addConstraints(previewConstraints)
@@ -535,6 +540,7 @@ class CameraViewController: UIViewController {
             self.view.addConstraints(previewConstraints)
             self.view.addConstraints(timerConstraints)
             self.view.addConstraints(orientConstraints)
+            centerbox.layer.borderWidth = 4.0
         }
         else{
             print("Portrait")
@@ -555,6 +561,7 @@ class CameraViewController: UIViewController {
             self.view.addConstraints(previewConstraints)
             self.view.addConstraints(timerConstraints)
             self.view.addConstraints(orientConstraints)
+            centerbox.layer.borderWidth = 0
         }
     }
 }
