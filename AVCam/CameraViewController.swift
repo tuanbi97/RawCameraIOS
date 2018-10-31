@@ -409,10 +409,10 @@ class CameraViewController: UIViewController {
             var photoSettings = AVCapturePhotoSettings()
             // Capture HEIF photo when supported, with flash set to auto and high resolution photo enabled.
             
-            if  self.photoOutput.availablePhotoCodecTypes.contains(.hevc) {
+            if  self.photoOutput.availablePhotoCodecTypes.contains(.jpeg) {
                 
                 guard let availableRawFormat = self.photoOutput.availableRawPhotoPixelFormatTypes.first else {return}
-                photoSettings = AVCapturePhotoSettings(rawPixelFormatType: availableRawFormat, processedFormat: [AVVideoCodecKey: AVVideoCodecType.hevc])
+                photoSettings = AVCapturePhotoSettings(rawPixelFormatType: availableRawFormat, processedFormat: [AVVideoCodecKey: AVVideoCodecType.jpeg])
 
             }
             
@@ -451,10 +451,10 @@ class CameraViewController: UIViewController {
             photoSettings = AVCapturePhotoSettings()
             // Capture HEIF photo when supported, with flash set to auto and high resolution photo enabled.
             
-            if  self.photoOutput.availablePhotoCodecTypes.contains(.hevc) {
+            if  self.photoOutput.availablePhotoCodecTypes.contains(.jpeg) {
                 
                 guard let availableRawFormat = self.photoOutput.availableRawPhotoPixelFormatTypes.first else {return}
-                photoSettings = AVCapturePhotoSettings(rawPixelFormatType: availableRawFormat, processedFormat: [AVVideoCodecKey: AVVideoCodecType.hevc])
+                photoSettings = AVCapturePhotoSettings(rawPixelFormatType: availableRawFormat, processedFormat: [AVVideoCodecKey: AVVideoCodecType.jpeg])
                 
             }
             

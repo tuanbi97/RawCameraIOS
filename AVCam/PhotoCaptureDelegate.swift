@@ -76,8 +76,9 @@ extension PhotoCaptureProcessor: AVCapturePhotoCaptureDelegate {
                 let jpgFileURL = self.makeUniqueTempFileURL(extension: "jpg")
                 jpgImageFileURL = jpgFileURL
                 do{
-                    let uiImage = UIImage(data: photo.fileDataRepresentation()!)
-                    try UIImageJPEGRepresentation(uiImage!, 1.0)!.write(to: jpgFileURL)
+//                    let uiImage = UIImage(data: photo.fileDataRepresentation()!)
+//                    try UIImageJPEGRepresentation(uiImage!, 1.0)!.write(to: jpgFileURL)
+                    try photo.fileDataRepresentation()!.write(to: jpgFileURL)
                 } catch{
                     fatalError("Couldn't write JPG file to URL")
                 }
