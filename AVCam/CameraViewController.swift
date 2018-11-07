@@ -398,9 +398,9 @@ class CameraViewController: UIViewController {
             the main thread and session configuration is done on the session queue.
         */        
         let videoPreviewLayerOrientation = previewView.videoPreviewLayer.connection?.videoOrientation
-        self.seconds = 4
+        self.seconds = 3
         self.timer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: (#selector(CameraViewController.displayTimer)), userInfo: nil, repeats: true)
-        sessionQueue.asyncAfter(deadline: .now() + 4) {
+        sessionQueue.asyncAfter(deadline: .now() + 3) {
             // Update the photo output's connection to match the video orientation of the video preview layer.
             if let photoOutputConnection = self.photoOutput.connection(with: .video) {
                 photoOutputConnection.videoOrientation = videoPreviewLayerOrientation!
